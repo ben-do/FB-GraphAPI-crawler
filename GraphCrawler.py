@@ -29,5 +29,14 @@ class GraphCrawler:
                    'until': until_unix
                    }
         r = requests.get(self.base_url + 'posts', params=payload)
-        return r
+        return json.loads(r.text)
+
+    def save_posts(self, since=None, until=None):
+        posts = self.get_posts(since, until)
+        for post in posts["data"]:
+            file_name = post['id']
+            my_file = open("data/" + file_name, 'w')
+            content = post['id'].encode('utf-8') + "\n" + post['created_time'].encode('utf-8') + "\n" + post['message'].encode('utf-8')
+            my_file.write(content)
+            my_file.close()
 
