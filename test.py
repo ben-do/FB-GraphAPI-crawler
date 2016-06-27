@@ -1,26 +1,24 @@
 # coding=utf-8
 
 import GraphCrawler as GC
-import json
+
 
 if __name__ == '__main__':
+
+    # 傳入粉絲專頁的名稱以初始化crawler
     crawler = GC.GraphCrawler(page_name='littlelifer')
-    print crawler.get_access_token()
-    posts = crawler.get_posts(since="2016-04-07", until="2016-04-08")
-    print crawler.post_data
+
+    # print crawler.get_access_token()
+
+    # 藉由時間取得粉絲專頁上的po文資料
+    crawler.get_posts(since="2016-06-07", until="2016-06-10")
+    # print crawler.post_data
+
+
     # crawler.write_post_into_file()
-    # my_file = open("post_data", 'w')
-    # my_file.write(str(crawler.post_data))
-    # my_file.close()
-    # with open('post_data.txt', 'w') as outfile:
-    #     json.dump(crawler.post_data, outfile)
-    # print posts
-    # print posts["data"]
-    # for post in posts["data"]:
-    #     print post['id']
-    # print post['data']
-    # for post in posts.text['data']:
-    #     print post.data.id
 
-    posts = crawler.save_posts()
+    # 將post資料寫入檔案
+    crawler.save_posts()
 
+    # 讀取post的id並取得留言
+    crawler.save_all_comments()

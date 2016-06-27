@@ -1,4 +1,5 @@
 # coding=utf-8
+import codecs
 import json
 import os
 import requests
@@ -45,7 +46,7 @@ class GraphCrawler:
             for d in posts["data"]:
                 self.post_data.append(d)
 
-        return json.loads(r.text)
+        return self.post_data
 
     def save_posts(self):
         for post in self.post_data:
@@ -61,7 +62,8 @@ class GraphCrawler:
 
     def have_paging(self, posts):
         if "paging" in posts:
-            return True
+            if "next" in posts["paging"]:
+                return True
         else:
             return False
 
@@ -69,11 +71,52 @@ class GraphCrawler:
         next_url = posts["paging"]["next"]
         next_r = requests.get(next_url)
         # print next_r.text
-        next_posts = json.loads(next_r.text)
-        return next_posts
+        next_data = json.loads(next_r.text)
+        return next_data
 
+    # dump post_data(json object) in to file
     def write_post_into_file(self, file_name="post_data.txt"):
         with open(file_name, 'w') as outfile:
             json.dump(self.post_data, outfile)
 
-    
+    # turn json object or list into file
+    def write_obj_into_file(self, obj, file_name="object.txt"):
+        with codecs.open(file_name, 'w', 'utf-8') as outfile:
+            json.dump(obj, outfile, ensure_ascii=False, indent=4)
+
+    # get comments via object_id
+    # return: list
+    # object_id: post id
+    # save: save the comments into file or not
+    def get_comments(self, object_id, save=False):
+        comment_list = []
+        payload = {'access_token': self.access_token}
+        r = requests.get("https://graph.facebook.com/v2.6/" + object_id + "/comments", params=payload)
+        comments = json.loads(r.text)
+        if "data" in comments:
+            for d in comments["data"]:
+                if "message" in d:
+                    comment_list.append(d["message"])
+
+        # get next page data
+        while self.have_paging(comments) is True:
+            print "have next page, try to get new comment"
+            comments = self.load_next(comments)
+            if "data" in comments:
+                for d in comments["data"]:
+                    if "message" in d:
+                        comment_list.append(d["message"])
+
+        # print comment_list
+        if save is True:
+            if not os.path.isdir("data/comments"):
+                os.mkdir("data/comments")
+            self.write_obj_into_file(comment_list, "data/comments/%s.txt" % object_id)
+
+        return comment_list
+
+    # save all comments, which from folder "data"'s post
+    # 讀取data資料夾內的所有post id, 然後存取留言
+    def save_all_comments(self):
+        for object_id in os.listdir("data"):
+            self.get_comments(object_id, save=True)
